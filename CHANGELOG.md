@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1 — 2026-11-19
+
+- Document required versus optional dependencies and behavior without each integration.
+- Add player update instructions and a persistent maintainer release policy.
+- Synchronize the installed addon version with the public release. No gameplay logic changes.
+
 ## 2.1.0 — 2026-11-19
 
 Initial public guild release: market/vendor analysis, all-profession requirement data, setup-cost profit estimates, persistent craft shopping, purchase journal, production costs and draggable minimap launcher.

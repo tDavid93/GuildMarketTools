@@ -6,12 +6,12 @@ Auction and profession tools for WoW Forever. English in-game UI; no character-s
 
 **[Download the latest installable ZIP](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. Download `GuildMarketTools-2.1.0.zip` from release assets, not the Source code ZIP.
+1. Download `GuildMarketTools-2.1.1.zip` from release assets, not the Source code ZIP.
 2. Exit WoW and extract into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc` exists.
 4. Start WoW and enable **Guild Market Tools**.
 
-**Magyarul:** a Releases oldalról az addon ZIP-et töltsd le. A benne lévő `GuildMarketTools` mappát másold az `_forever_/Interface/AddOns/` mappába, majd indítsd újra a játékot.
+**Magyarul:** a Releases oldalrĂłl az addon ZIP-et tĂ¶ltsd le. A benne lĂ©vĹ‘ `GuildMarketTools` mappĂˇt mĂˇsold az `_forever_/Interface/AddOns/` mappĂˇba, majd indĂ­tsd Ăşjra a jĂˇtĂ©kot.
 
 Updates replace the addon folder while WoW is closed. Keep your WTF folder: it contains your own market history and ledger. Disable legacy copies of the same market/vendor modules.
 
@@ -38,6 +38,35 @@ Updates replace the addon folder while WoW is closed. Keep your WTF folder: it c
 Open each profession and choose **Read open profession**. At the AH select a recipe and **Refresh prices**. Set your planned craft count in **Buy materials**. Keep **Buy required setup** enabled when acquiring new tools/camp equipment; disable it when using existing setup. Other recipes default to one craft with new setup.
 
 Confirmed AH purchases with verified prices are journaled automatically. Merchant price observations are estimates, not purchase receipts. Earlier stock and vendor purchases may require manual cost entry. Record completed crafts and actual output quantity in **Production costs**. The addon does not craft automatically.
+
+## Dependencies / Függőségek
+
+**No other addon is required. / Nincs kötelező másik addon.**
+Use the WoW Forever-compatible version of each optional integration.
+
+| Addon | Required? | Used for | Without it |
+| --- | --- | --- | --- |
+| Auctionator | Optional, recommended | Item-tooltip AH price and price age through its public API | Tooltip vendor value remains available; AH comparison needs Auctionator data. Market/recipe queries still use the native AH. |
+| AtlasLootContinued | Optional, recommended | Minimum profession skill and teaching-recipe metadata | Unknown requirements stay unknown; **Learnable now** excludes recipes without confirmed skill/character-level requirements. Already saved metadata remains usable. |
+| EllesmereUI, TSM, Baganator or other bag addons | No | Not dependencies | Market Tools works without them. |
+| LibDBIcon / LibDataBroker | No | Not dependencies | The minimap button is built in. |
+
+Magyarul: az **Auctionator** az itemtooltip aukciós áraihoz ajánlott.
+Az **AtlasLootContinued** a recepttanulási feltételekhez ajánlott; nélküle a
+**Learnable now** szűrőből hiányozhatnak az ismeretlen követelményű receptek.
+A beépített receptkövetelmény-adatbázishoz nem kell külön addont telepíteni.
+
+Optional integrations are declared in the TOC as `OptionalDeps`, not mandatory
+`Dependencies`. Install them separately; they are not bundled in the ZIP.
+Python and `lupa` are needed only for developers running tests, not for players.
+
+## Updates
+
+Every maintained addon change is published to this repository and as a new
+versioned ZIP with release notes and a checksum. Use the [latest release](https://github.com/tDavid93/GuildMarketTools/releases/latest)
+to keep guild installations on the same version. Check the version in the game's
+AddOns list. GitHub publication does **not** automatically update installed copies;
+each player must replace their addon folder with the new release while WoW is closed.
 
 ## Compatibility and limitations
 
