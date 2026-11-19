@@ -8,7 +8,7 @@ addon = root / 'GuildMarketTools'
 toc = (addon / 'GuildMarketTools.toc').read_text()
 version = re.search(r'^## Version: ([0-9.]+)$', toc, re.M).group(1)
 names = [line.strip() for line in toc.splitlines() if line.strip() and not line.startswith('#')]
-names += ['GuildMarketTools.toc', 'README.txt', 'LICENSE', 'LICENSE-Profit.txt']
+names += ['GuildMarketTools.toc', 'README.txt', 'README.hu.md', 'LICENSE', 'LICENSE-Profit.txt']
 assert len(names) == len(set(names))
 for name in names:
     assert '/' not in name and chr(92) not in name and (addon / name).is_file(), name

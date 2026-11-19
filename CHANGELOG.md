@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2 — 2026-11-19
+
+- Add a complete Hungarian README with installation, dependencies and usage instructions.
+- Link both languages and include the Hungarian guide in the installable ZIP.
+- Correct previously corrupted Hungarian text in the English guide. No gameplay changes.
+
 ## 2.1.1 — 2026-11-19
 
 - Document required versus optional dependencies and behavior without each integration.

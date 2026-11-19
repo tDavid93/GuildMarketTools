@@ -9,7 +9,8 @@ Do not stop after editing the installed addon or pushing source only.
 - Keep the installed runtime and release source aligned. Never publish player
   SavedVariables, account paths, private test fixtures or personal UI modules.
 - Increment the TOC version for every release and update CHANGELOG.md, README.md
-  and the packaged README.txt. Document dependency changes explicitly.
+  and both language guides (README.md / README.hu.md) and their packaged copies.
+  Use explicit UTF-8 when reading/writing documentation. Document dependency changes explicitly.
 - Run `python scripts/check.py` and `python scripts/package.py`; inspect the diff
   and archive contents. The package allowlist must remain explicit.
 - Commit and push to the owner's existing repository, wait for CI, then publish
