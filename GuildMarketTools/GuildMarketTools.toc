@@ -1,0 +1,24 @@
+## Interface: 16001
+## Title: Guild Market Tools
+## Notes: Market deals, vendor bargains, price history, watchlist and purchase journal for WoW Forever.
+## Author: Guild Market Tools contributors
+## Version: 2.1.0
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## OptionalDeps: Auctionator, AtlasLootContinued
+## SavedVariables: GuildMarketToolsDB
+
+MarketCore.lua
+UI.lua
+ItemValue.lua
+VendorBuyer.lua
+VendorDeals.lua
+VendorMaterials.lua
+ProfessionRefresh.lua
+MarketDepth.lua
+RecipeRequirementsDB.lua
+CraftRequirements.lua
+CraftShopping.lua
+CraftCosts.lua
+Alchemy.lua
+Minimap.lua
+Market.lua
