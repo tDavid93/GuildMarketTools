@@ -1,15 +1,17 @@
 local M=GuildMarketTools
 -- Standard unlimited crafting supplies. Prices are per item, not merchant bundle.
--- Vial defaults are neutral estimates; live merchant quotes override them.
+-- Neutral per-unit estimates; live merchant quotes override them.
+-- Thread/dye/supply defaults: Profit Data/Items.lua, build 1.60.1.70888,
+-- commit bbf0b653f8c14544e77d261fc2cb8b4606656b69; see LICENSE-Profit.txt.
 local supplies={ [3371]=4,[3372]=40,[8925]=500,[18256]=6000,
-    [2320]=true,[2321]=true,[4291]=true,[8343]=true,[14341]=true,
-    [2324]=true,[2604]=true,[2605]=true,[4340]=true,[4341]=true,[4342]=true,
-    [6260]=true,[6261]=true,[10290]=true,[4289]=true,[4399]=true,[4400]=true,
-    [2880]=true,[3466]=true,[3857]=true,[5956]=true,[2678]=true,[2692]=true,
-    [3713]=true,[159]=true }
+    [2320]=10,[2321]=100,[4291]=500,[8343]=2000,[14341]=5000,
+    [2324]=25,[2604]=50,[2605]=100,[4340]=350,[4341]=500,[4342]=2500,
+    [6260]=50,[6261]=1000,[10290]=2500,[4289]=50,[4399]=200,[4400]=2000,
+    [2880]=100,[3466]=2000,[3857]=500,[5956]=true,[2678]=2,[2692]=40,
+    [3713]=160,[159]=5 }
 function M.VendorMaterial(id)
     local saved=M.account and M.account.vendorMaterials and M.account.vendorMaterials[id]
-    if saved then return {price=saved.price,source="Vendor (last observed)",name=saved.name} end
+    if saved and M.Positive(saved.price) then return {price=saved.price,source="Vendor (last observed)",name=saved.name} end
     if supplies[id] then return {price=type(supplies[id])=="number" and supplies[id] or nil,source="Vendor (base estimate)"} end
 end
 function M.ReadVendorMaterials()

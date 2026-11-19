@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.5 — 2026-11-19
+
+- Supply neutral per-unit defaults for 24 vendor ingredients, including Coarse and Fine Thread.
+- Preserve valid observed merchant discounts over defaults; ignore invalid saved quotes.
+- Fix missing Tailoring costs caused by unobserved thread prices; retain real missing output-price status.
+- Add screenshot-based regression cases.
+
 ## 2.1.4 — 2026-11-19
 
 - Distinguish missing output, material and setup prices, with item IDs and actionable reasons.

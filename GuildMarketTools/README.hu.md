@@ -8,7 +8,7 @@ Aukciós és szakmakezelő eszközök WoW Foreverhez. Az addon játékbeli felü
 
 **[A legújabb telepíthető kiadás letöltése](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. A kiadás mellékletei közül a `GuildMarketTools-2.1.4.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
+1. A kiadás mellékletei közül a `GuildMarketTools-2.1.5.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
 2. Lépj ki a játékból, és csomagold ki az `_forever_/Interface/AddOns/` mappába.
 3. Ellenőrizd, hogy ez az elérési út létezik: `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc`.
 4. Indítsd el a játékot, és engedélyezd a **Guild Market Tools** addont az AddOns listában.
@@ -100,3 +100,7 @@ A **Learnable / check trainer** az elmentett szakmaszinteddel elérhető, még n
 ### Hiányzó árak vizsgálata
 
 A státusz külön jelzi a hiányzó eladási árat (No sale price), alapanyagárat (Missing mats) és eszközárat (Missing setup). A receptre kattintva látható az érintett tárgy neve, azonosítója, szerepe és a hiány oka. Az ismeretlen neveket automatikusan lekéri a kliensből. Hiányos teljes költségnél az ismert részösszeg megmarad, de ez nem profitbecslés. Hiányzó AH-ajánlatot nem helyettesít kitalált árral. Ez a frissítés nem vezet be rekurzív köztesalapanyag-gyártást vagy recept-rangválasztást.
+
+### Vendoros alapanyagok alapárai
+
+A cérnák, festékek és gyakori vendoros alapanyagok kedvezmény nélküli darabára beépített becslésként elérhető, így nem kell előbb kereskedőhöz menni a költségszámításhoz. A Coarse Thread alapára 10 réz, a Fine Threadé 100 réz. Az érvényes, elmentett kereskedői ár — kedvezménnyel és csomagmérettel együtt — felülírja az alapárat. Az ismeretlen vendoros tételek ára továbbra is hiányzó marad. Az adatok a már hivatkozott, MIT-licencű Profit-adatforrás Data/Items.lua állományából származnak; becslések, nem vásárlási bizonylatok. Hiányzó eladási AH-árnál nincs profitbecslés, de a teljesen ismert alapanyagköltség látható marad.

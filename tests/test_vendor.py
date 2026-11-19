@@ -23,8 +23,8 @@ M.ReadVendorMaterials()
 assert(M.VendorMaterial(3372).price==36)
 assert(not M.VendorMaterial(777) and not M.VendorMaterial(888))
 r=M.AlchemyEstimate(recipe,prices,1000,5,0);assert(r.cost==172 and not r.stale)
-recipe.mats[1].id=4291
-r=M.AlchemyEstimate(recipe,prices,1000,5,0);assert(not r.cost and r.missing[1]==4291)
+recipe.mats[1].id=5956
+r=M.AlchemyEstimate(recipe,prices,1000,5,0);assert(not r.cost and r.missing[1]==5956)
 recipe.mats[1].id=3372
 assert(M.StartCraftShopping(recipe,1))
 assert(not M.OpenShoppingMaterial(3372)) -- vendor guard before any AH API
