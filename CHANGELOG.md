@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.4 — 2026-11-19
+
+- Distinguish missing output, material and setup prices, with item IDs and actionable reasons.
+- Request missing item names asynchronously and use known tool names as fallback.
+- Show known cost subtotals without presenting incomplete costs as profit.
+- Add missing-price and item-cache regression tests.
+
 ## 2.1.3 — 2026-11-19
 
 - Fix exclusion of trainer recipes without teaching items from the learning filter.

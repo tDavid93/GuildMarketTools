@@ -2,7 +2,7 @@
 ## Title: Guild Market Tools
 ## Notes: Market deals, vendor bargains, price history, watchlist and purchase journal for WoW Forever.
 ## Author: Guild Market Tools contributors
-## Version: 2.1.3
+## Version: 2.1.4
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
 ## OptionalDeps: Auctionator, AtlasLootContinued
 ## SavedVariables: GuildMarketToolsDB

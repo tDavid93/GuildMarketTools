@@ -8,7 +8,7 @@ Auction and profession tools for WoW Forever. English in-game UI; no character-s
 
 **[Download the latest installable ZIP](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. Download `GuildMarketTools-2.1.3.zip` from release assets, not the Source code ZIP.
+1. Download `GuildMarketTools-2.1.4.zip` from release assets, not the Source code ZIP.
 2. Exit WoW and extract into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc` exists.
 4. Start WoW and enable **Guild Market Tools**.
@@ -95,3 +95,7 @@ Nine gathering requirement facts come from [maf2414/wow-forever-talents](https:/
 ### Learning filter
 
 **Learnable / check trainer** includes unlearned recipes at your recorded profession skill. Known character-level limits still apply. Trainer-taught recipes without a verified character-level requirement are included as **Check trainer**, not guaranteed learnable. Item-taught recipes with unknown character requirements remain excluded. The bundled database supplies minimum skill and teaching-item IDs without AtlasLoot where available. Open the profession and use **Read open profession** to refresh skill and learned status; the addon cannot infer an unimported profession or another character's skill.
+
+### Missing price diagnostics
+
+The price-status column distinguishes No sale price, Missing mats and Missing setup. Select a recipe to see the item name/ID, its role and why the quote is unavailable. Unknown names request client item data automatically. A known cost subtotal remains visible when total cost is incomplete; it is not a profit estimate. Missing AH quotes are not replaced with fabricated prices. Recursive intermediate crafting and recipe-rank selection are not implemented by this update.

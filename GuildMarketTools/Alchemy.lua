@@ -105,20 +105,24 @@ function M.AlchemyPrices(items,unavailable)
     return prices
 end
 function M.AlchemyEstimate(recipe,prices,now,fee,reserve)
-    local r={recipe=recipe,cost=0,age=0,missing={},mats={}}
-    local function price(id)
-        local p=prices[id]
-        if not p or p.unavailable or not M.Positive(p.price) or not p.time or p.time>now then
-            r.missing[#r.missing+1]=id; return nil
-        end
-        r.age=math.max(r.age,now-p.time); return p.price
+    local r={recipe=recipe,cost=0,age=0,missing={},missingDetails={},mats={}}
+    local function missing(id,role,reason)
+        r.missing[#r.missing+1]=id
+        r.missingDetails[#r.missingDetails+1]={id=id,role=role,reason=reason}
     end
-    if recipe.itemID then r.unitPrice=price(recipe.itemID) end
+    local function price(id,role)
+        local p=prices[id]
+        if not p then missing(id,role,"No AH observation - refresh this recipe");return nil end
+        if p.unavailable then missing(id,role,"No buyout offers in the last complete search");return nil end
+        if not M.Positive(p.price) or not p.time or p.time>now then missing(id,role,"Invalid price or timestamp - refresh this recipe");return nil end
+        r.age=math.max(r.age,now-p.time);return p.price
+    end
+    if recipe.itemID then r.unitPrice=price(recipe.itemID,"Output") end
     local materialsComplete=true
     for _,mat in ipairs(recipe.mats or {}) do
         local vendor=M.VendorMaterial and M.VendorMaterial(mat.id)
         local p
-        if vendor then p=vendor.price;if not p then r.missing[#r.missing+1]=mat.id end else p=price(mat.id) end
+        if vendor then p=vendor.price;if not p then missing(mat.id,"Material","Vendor price unknown - visit a supplier") end else p=price(mat.id,"Material") end
         r.mats[#r.mats+1]={id=mat.id,count=mat.count,price=p,vendor=vendor,time=not vendor and prices[mat.id] and prices[mat.id].time}
         if p then r.cost=r.cost+p*mat.count else materialsComplete=false end
     end
@@ -131,11 +135,12 @@ function M.AlchemyEstimate(recipe,prices,now,fee,reserve)
         for _,mat in ipairs(M.RecipeSetup and M.RecipeSetup(recipe) or {}) do
             local vendor=M.VendorMaterial and M.VendorMaterial(mat.id)
             local p
-            if vendor then p=vendor.price;if not p then r.missing[#r.missing+1]=mat.id end else p=price(mat.id) end
+            if vendor then p=vendor.price;if not p then missing(mat.id,"Setup","Vendor price unknown - visit a supplier") end else p=price(mat.id,"Setup") end
             if p then r.setupCost=r.setupCost+p*mat.count else materialsComplete=false;r.setupComplete=false end
         end
     end
     r.cost=r.cost+r.setupCost/crafts
+    r.knownCost=r.cost
     r.stale=r.age>900
     -- A missing material must not hide a known output price / sale value.
     if r.unitPrice and M.Positive(recipe.count) then
@@ -197,10 +202,28 @@ function M.ReadProfession()
     for id,r in pairs(staged) do saved[id]=r end
     return n,n>0 and (n.." recipes imported from "..all[pid].name..".") or "Recipe data not ready. Reopen your profession and retry."
 end
-local function name(id,prices)
+function M.RecipeItemName(id,prices)
     local get=C_Item and C_Item.GetItemInfo or GetItemInfo
-    return (get and get(id)) or (prices[id] and prices[id].name) or ("Item "..id)
+    local found=get and get(id)
+    if found then return found end
+    if not levelRequests[id] and C_Item and C_Item.RequestLoadItemDataByID then
+        levelRequests[id]=true;C_Item.RequestLoadItemDataByID(id)
+    end
+    if prices[id] and prices[id].name then return prices[id].name end
+    for _,list in pairs(M.RequirementDatabase or {}) do for _,v in ipairs(list) do if v.id==id then return v.name end end end
+    return "Item "..tostring(id).." (name loading)"
 end
+local name=M.RecipeItemName
+function M.RecipePriceStatus(r)
+    if r.recipe.unsupported then return "Unsupported" end
+    if r.requirementsUnknown then return "Requirements?" end
+    local roles={};for _,v in ipairs(r.missingDetails or {}) do roles[v.role]=true end
+    if roles.Output then return "No sale price" end
+    if roles.Material then return "Missing mats" end
+    if roles.Setup then return "Missing setup" end
+    return #r.missing>0 and "Missing prices" or r.stale and "Stale" or r.profit and r.profit>0 and "Est. profit" or "Loss"
+end
+
 local function inspect(r,prices)
     local text={r.recipe.name,r.recipe.learned and "Learned" or "Not learned", "Output / craft: "..tostring(r.recipe.count or "?"),""}
     local requirements=M.CraftRequirementsText and M.CraftRequirementsText(r.recipe)
@@ -231,6 +254,7 @@ local function inspect(r,prices)
     text[#text+1]="\nAH price / unit: "..money(r.unitPrice)
     text[#text+1]="Materials / craft: "..money(r.materialCost)
     text[#text+1]="Total cost / craft: "..money(r.cost)
+    if not r.cost then text[#text+1]="Known cost subtotal / craft: "..money(r.knownCost).." (incomplete)" end
     text[#text+1]="Gross sale: "..money(r.gross)
     text[#text+1]="After AH cut: "..money(r.net)
     text[#text+1]="Profit / craft: "..money(r.profit)
@@ -238,7 +262,7 @@ local function inspect(r,prices)
     if r.recipe.unsupported then text[#text+1]=r.recipe.unsupported end
     if #r.missing>0 then
         text[#text+1]="\nMissing / unavailable prices:"
-        for _,id in ipairs(r.missing) do text[#text+1]=name(id,prices) end
+        for _,v in ipairs(r.missingDetails) do text[#text+1]=v.role..": "..name(v.id,prices).." ["..v.id.."]\n  "..v.reason end
     end
     detail:SetText(table.concat(text,"\n"))
     panel.detailContent:SetHeight(math.max(1,detail:GetStringHeight()+15))
@@ -251,9 +275,7 @@ local function render()
             rows[#rows+1]=M.AlchemyEstimate(recipe,prices,time(),M.settings.fee,M.settings.deposit)
         end
     end
-    local function state(r)
-        return r.recipe.unsupported and "Unsupported" or r.requirementsUnknown and "Requirements?" or #r.missing>0 and "Missing prices" or r.stale and "Stale" or r.profit and r.profit>0 and "Est. profit" or "Loss"
-    end
+    local state=M.RecipePriceStatus
     local columns={{"Recipe",190},{"Cost / craft",110},{"AH / unit",110},{"Profit / craft",120},{"Price status",95},{"Age",65},{"Min. skill",90}}
     M.UI.Sort(rows,sortColumn,descending,function(r,c)
         if c==1 then return r.recipe.name:lower() elseif c==2 then return r.cost elseif c==3 then return r.unitPrice

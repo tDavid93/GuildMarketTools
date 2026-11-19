@@ -8,7 +8,7 @@ Aukciós és szakmakezelő eszközök WoW Foreverhez. Az addon játékbeli felü
 
 **[A legújabb telepíthető kiadás letöltése](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. A kiadás mellékletei közül a `GuildMarketTools-2.1.3.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
+1. A kiadás mellékletei közül a `GuildMarketTools-2.1.4.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
 2. Lépj ki a játékból, és csomagold ki az `_forever_/Interface/AddOns/` mappába.
 3. Ellenőrizd, hogy ez az elérési út létezik: `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc`.
 4. Indítsd el a játékot, és engedélyezd a **Guild Market Tools** addont az AddOns listában.
@@ -96,3 +96,7 @@ Kilenc gathering-recept követelményadata a [maf2414/wow-forever-talents](https
 ### Tanulhatósági szűrő
 
 A **Learnable / check trainer** az elmentett szakmaszinteddel elérhető, még nem ismert recepteket mutatja. Az ismert karakterkövetelményeket továbbra is ellenőrzi. Az ismeretlen karakterkövetelményű tréneres receptek **Check trainer** jelöléssel jelennek meg: ezek tanulhatóságát a trénernél ellenőrizd. A tanító tárgyas receptek ismeretlen karakterkövetelménnyel kimaradnak. A beépített adatbázis AtlasLoot nélkül is szolgáltat minimális szakmaszintet és tanító tárgyazonosítót, ahol van adat. Nyisd meg a szakmát és használd a **Read open profession** gombot a szakmaszint és a megtanult receptek frissítéséhez; be nem olvasott szakma vagy másik karakter szakmaszintjét nem tudja kitalálni.
+
+### Hiányzó árak vizsgálata
+
+A státusz külön jelzi a hiányzó eladási árat (No sale price), alapanyagárat (Missing mats) és eszközárat (Missing setup). A receptre kattintva látható az érintett tárgy neve, azonosítója, szerepe és a hiány oka. Az ismeretlen neveket automatikusan lekéri a kliensből. Hiányos teljes költségnél az ismert részösszeg megmarad, de ez nem profitbecslés. Hiányzó AH-ajánlatot nem helyettesít kitalált árral. Ez a frissítés nem vezet be rekurzív köztesalapanyag-gyártást vagy recept-rangválasztást.
