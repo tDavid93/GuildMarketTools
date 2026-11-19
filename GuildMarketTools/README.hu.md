@@ -8,7 +8,7 @@ Aukciós és szakmakezelő eszközök WoW Foreverhez. Az addon játékbeli felü
 
 **[A legújabb telepíthető kiadás letöltése](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. A kiadás mellékletei közül a `GuildMarketTools-2.1.2.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
+1. A kiadás mellékletei közül a `GuildMarketTools-2.1.3.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
 2. Lépj ki a játékból, és csomagold ki az `_forever_/Interface/AddOns/` mappába.
 3. Ellenőrizd, hogy ez az elérési út létezik: `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc`.
 4. Indítsd el a játékot, és engedélyezd a **Guild Market Tools** addont az AddOns listában.
@@ -53,7 +53,7 @@ A visszaigazolt AH-vásárlás mennyisége és ellenőrzött ára automatikusan 
 | Addon | Szükséges? | Mire használjuk? | Mi történik nélküle? |
 | --- | --- | --- | --- |
 | Auctionator | Opcionális, ajánlott | Az itemtooltip AH-ára és az ár kora a nyilvános API-n keresztül | A vendorérték megmarad; a tooltip AH-összehasonlításához Auctionator-adat kell. A Market Tools saját AH-lekérdezései tovább működnek. |
-| AtlasLootContinued | Opcionális, ajánlott | Minimális szakmaszint és a receptet tanító tárgy adatai | Az ismeretlen tanulási követelményű receptek kimaradnak a **Learnable now** szűrőből. A már elmentett adatok használhatók maradnak. |
+| AtlasLootContinued | Opcionális, ajánlott | Minimális szakmaszint és a receptet tanító tárgy adatai | A beépített tanulási adatok használhatók, ahol rendelkezésre állnak. Az ismeretlen karakterszintet jelöli; a tréneres jelölteket a trénernél kell ellenőrizni. |
 | EllesmereUI, TSM, Baganator és más táskaaddonok | Nem | Nem függőségek | Az addon nélkülük is működik. |
 | LibDBIcon / LibDataBroker | Nem | Nem függőségek | A minimapgomb beépített. |
 
@@ -92,3 +92,7 @@ A saját kód MIT-licencű: [LICENSE](LICENSE).
 A követelményadatok alapja az [ExcEssIv3/profit](https://github.com/ExcEssIv3/profit) adatbázisa, `1.60.1.70888` build, `bbf0b653f8c14544e77d261fc2cb8b4606656b69` commit. MIT-licence a csomag `LICENSE-Profit.txt` fájljában is megtalálható.
 
 Kilenc gathering-recept követelményadata a [maf2414/wow-forever-talents](https://github.com/maf2414/wow-forever-talents/blob/bab6cc7556feb95978c11ecb64aaa403a1bf19dd/docs/professions-data.json) forrásból származik, `1.60.1.69876` buildből; a felületen külön forrásjelölést kapnak. Ezek receptadatok, nem aukciós árak. Más addon futtatható kódját nem csomagoljuk a kiadásba.
+
+### Tanulhatósági szűrő
+
+A **Learnable / check trainer** az elmentett szakmaszinteddel elérhető, még nem ismert recepteket mutatja. Az ismert karakterkövetelményeket továbbra is ellenőrzi. Az ismeretlen karakterkövetelményű tréneres receptek **Check trainer** jelöléssel jelennek meg: ezek tanulhatóságát a trénernél ellenőrizd. A tanító tárgyas receptek ismeretlen karakterkövetelménnyel kimaradnak. A beépített adatbázis AtlasLoot nélkül is szolgáltat minimális szakmaszintet és tanító tárgyazonosítót, ahol van adat. Nyisd meg a szakmát és használd a **Read open profession** gombot a szakmaszint és a megtanult receptek frissítéséhez; be nem olvasott szakma vagy másik karakter szakmaszintjét nem tudja kitalálni.

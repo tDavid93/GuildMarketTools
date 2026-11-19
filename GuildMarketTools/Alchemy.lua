@@ -31,6 +31,8 @@ end
 -- AtlasLoot's profession entry stores the minimum learning rank at index 3.
 -- Do not substitute maxTrivialLevel (the grey skill-up threshold).
 function M.RecipeMinimumSkill(id)
+    local entry=M.RecipeLearningDB and M.RecipeLearningDB[id]
+    if entry and type(entry.minSkill)=="number" then return entry.minSkill,"Forever DB" end
     local data=AtlasLoot and AtlasLoot.Data and AtlasLoot.Data.Profession
     if data and data.GetProfessionData then
         local ok,r=pcall(data.GetProfessionData,id)
@@ -43,7 +45,8 @@ end
 local levelRequests={}
 function M.RecipeCharacterLevel(recipe)
     local data=AtlasLoot and AtlasLoot.Data and AtlasLoot.Data.Recipe
-    local id=recipe.recipeItemID
+    local entry=M.RecipeLearningDB and M.RecipeLearningDB[recipe.id]
+    local id=recipe.recipeItemID or (entry and entry.recipeItemID)
     if not id and data and data.GetRecipeForSpell then
         local ok,value=pcall(data.GetRecipeForSpell,recipe.id)
         if ok and type(value)=="number" and value>0 then id=value;recipe.recipeItemID=id end
@@ -62,16 +65,25 @@ function M.RecipeCharacterLevel(recipe)
         levelRequests[id]=true;C_Item.RequestLoadItemDataByID(id)
     end
 end
-function M.RecipeLearnable(recipe,skill,level)
-    return M.RecipeLearnableAtSkill(recipe,skill) and type(level)=="number"
-        and type(recipe.minCharacterLevel)=="number" and level>=recipe.minCharacterLevel
+function M.RecipeLearningStatus(recipe,skill,level)
+    if not M.RecipeLearnableAtSkill(recipe,skill) or type(level)~="number" then return nil end
+    if type(recipe.minCharacterLevel)=="number" then
+        if level<recipe.minCharacterLevel then return nil end
+        return "Level requirements met"
+    end
+    local entry=M.RecipeLearningDB and M.RecipeLearningDB[recipe.id]
+    if entry and entry.trainer then return "Check trainer: character level / other requirements unverified" end
 end
+function M.RecipeLearnable(recipe,skill,level)
+    return M.RecipeLearningStatus(recipe,skill,level)~=nil
+end
+
 local function recipes()
     local all={}
     for id,p in pairs(professions()) do
         if not professionFilter or professionFilter==id then
             for _,r in pairs(p.recipes) do r.profession=p.name; r.professionID=id; r.currentSkill=p.skillLevel
-                if r.minSkill==nil then r.minSkill,r.minSkillSource=M.RecipeMinimumSkill(r.id) end
+                if r.minSkill==nil or (M.RecipeLearningDB and M.RecipeLearningDB[r.id]) then r.minSkill,r.minSkillSource=M.RecipeMinimumSkill(r.id) end
                 r.minCharacterLevel,r.characterLevelSource=M.RecipeCharacterLevel(r)
                 all[#all+1]=r end
         end
@@ -201,7 +213,9 @@ local function inspect(r,prices)
     text[#text+1]="Profession skill: "..tostring(r.recipe.currentSkill or "--").." | Minimum: "..tostring(r.recipe.minSkill or "--")
     text[#text+1]="Minimum source: "..(r.recipe.minSkillSource or "Unknown")
     text[#text+1]="Character level: "..tostring(UnitLevel("player")).." | Required: "..tostring(r.recipe.minCharacterLevel or "Unknown")
-    text[#text+1]="Level source: "..(r.recipe.characterLevelSource or "Unavailable; excluded from Learnable")
+    text[#text+1]="Level source: "..(r.recipe.characterLevelSource or "Unknown")
+    local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"))
+    if learning then text[#text+1]="Learning: "..learning end
     text[#text+1]="Recipe acquisition and other requirements still apply."
     text[#text+1]=""
     local function age(id)
@@ -257,14 +271,15 @@ local function render()
         w:SetScript("OnClick",function() selected=key; panel.detailScroll:SetVerticalScroll(0); render() end)
         w:SetScript("OnEnter",function(self)
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine(r.recipe.name,1,1,1)
-            GameTooltip:AddLine(r.recipe.profession.." | "..(r.recipe.learned and "Learned" or "Not learned"),.6,.9,.9); GameTooltip:Show()
+            GameTooltip:AddLine(r.recipe.profession.." | "..(r.recipe.learned and "Learned" or "Not learned"),.6,.9,.9)
+            local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"));if learning then GameTooltip:AddLine(learning,1,.82,.3,true) end;GameTooltip:Show()
         end)
         w:SetScript("OnLeave",function() GameTooltip:Hide() end)
         if selected==key then selectedRecipe=r.recipe; inspect(r,prices); found=true end
     end
     for i=#rows+1,#widgets do widgets[i]:Hide() end
     content:SetHeight(math.max(1,#rows*32))
-    if not found then panel.detailContent:SetHeight(300); detail:SetText(#rows==0 and "No matching recipes\n\nOpen each crafting profession once to import its recipes.\n\nLearnable requires both profession skill and character level. Unknown requirements are excluded.\n\nTry another profession or clear the filters." or "Recipe details\n\nSelect a recipe for its materials and calculation.\n\nProfit is estimated from asking prices, after the AH cut and your relist reserve.\n\nPrices older than 15 minutes are marked Stale.") end
+    if not found then panel.detailContent:SetHeight(300); detail:SetText(#rows==0 and "No matching recipes\n\nOpen each crafting profession once to import its recipes.\n\nLearning filter checks known skill and character levels. Trainer recipes with unknown character requirements are included for verification.\n\nTry another profession or clear the filters." or "Recipe details\n\nSelect a recipe for its materials and calculation.\n\nProfit is estimated from asking prices, after the AH cut and your relist reserve.\n\nPrices older than 15 minutes are marked Stale.") end
 end
 local function button(parent,text,x,y,width,fn)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate"); b:SetSize(width,24); b:SetPoint("TOPLEFT",x,y); b:SetText(text); b:SetScript("OnClick",fn); return M.UI.Button(b)
@@ -300,7 +315,7 @@ function M.ShowAlchemy()
             resetList()
         end)
         skillCheck=CreateFrame("CheckButton",nil,panel,"UICheckButtonTemplate"); skillCheck:SetPoint("TOPLEFT",16,-96); skillCheck:SetSize(24,24)
-        local sl=M.UI.Text(skillCheck,13); sl:SetPoint("LEFT",skillCheck,"RIGHT"); sl:SetText("Learnable now")
+        local sl=M.UI.Text(skillCheck,13); sl:SetPoint("LEFT",skillCheck,"RIGHT"); sl:SetText("Learnable / check trainer")
         skillCheck:SetScript("OnClick",function(self)
             learnableOnly=not not self:GetChecked()
             if learnableOnly then learnedOnly=false; learnedCheck:SetChecked(false) end

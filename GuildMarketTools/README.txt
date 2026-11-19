@@ -8,7 +8,7 @@ Auction and profession tools for WoW Forever. English in-game UI; no character-s
 
 **[Download the latest installable ZIP](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. Download `GuildMarketTools-2.1.2.zip` from release assets, not the Source code ZIP.
+1. Download `GuildMarketTools-2.1.3.zip` from release assets, not the Source code ZIP.
 2. Exit WoW and extract into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc` exists.
 4. Start WoW and enable **Guild Market Tools**.
@@ -48,7 +48,7 @@ Use the WoW Forever-compatible version of each optional integration.
 | Addon | Required? | Used for | Without it |
 | --- | --- | --- | --- |
 | Auctionator | Optional, recommended | Item-tooltip AH price and price age through its public API | Tooltip vendor value remains available; AH comparison needs Auctionator data. Market/recipe queries still use the native AH. |
-| AtlasLootContinued | Optional, recommended | Minimum profession skill and teaching-recipe metadata | Unknown requirements stay unknown; **Learnable now** excludes recipes without confirmed skill/character-level requirements. Already saved metadata remains usable. |
+| AtlasLootContinued | Optional, recommended | Minimum profession skill and teaching-recipe metadata | Bundled learning metadata is used where available. Unknown character levels remain labelled; trainer candidates can be checked at the trainer. |
 | EllesmereUI, TSM, Baganator or other bag addons | No | Not dependencies | Market Tools works without them. |
 | LibDBIcon / LibDataBroker | No | Not dependencies | The minimap button is built in. |
 
@@ -91,3 +91,7 @@ Original code: MIT, see [LICENSE](LICENSE).
 Requirement data derives from [ExcEssIv3/profit](https://github.com/ExcEssIv3/profit), build `1.60.1.70888`, commit `bbf0b653f8c14544e77d261fc2cb8b4606656b69`. Its MIT notice is included in `GuildMarketTools/LICENSE-Profit.txt`.
 
 Nine gathering requirement facts come from [maf2414/wow-forever-talents](https://github.com/maf2414/wow-forever-talents/blob/bab6cc7556feb95978c11ecb64aaa403a1bf19dd/docs/professions-data.json), build `1.60.1.69876`, with separate source labels in-game. These are recipe requirements, not auction prices. No third-party addon code is bundled.
+
+### Learning filter
+
+**Learnable / check trainer** includes unlearned recipes at your recorded profession skill. Known character-level limits still apply. Trainer-taught recipes without a verified character-level requirement are included as **Check trainer**, not guaranteed learnable. Item-taught recipes with unknown character requirements remain excluded. The bundled database supplies minimum skill and teaching-item IDs without AtlasLoot where available. Open the profession and use **Read open profession** to refresh skill and learned status; the addon cannot infer an unimported profession or another character's skill.

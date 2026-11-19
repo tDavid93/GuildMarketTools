@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.3 — 2026-11-19
+
+- Fix exclusion of trainer recipes without teaching items from the learning filter.
+- Add bundled minimum-skill and teaching-item metadata for all professions in the source dataset.
+- Label unverified trainer candidates explicitly; preserve known character-level and skill limits.
+- Add Tailoring and Enchanting learning regression tests.
+
 ## 2.1.2 — 2026-11-19
 
 - Add a complete Hungarian README with installation, dependencies and usage instructions.
