@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.8 — 2026-11-22
+
+- Fix copied Wowhead links opening Retail search: target the Forever crafting-spell page directly.
+- Fall back to a Forever item page or encoded Forever search only when IDs are unavailable.
+- Update copy-dialog text and both language guides; add Caustic Smog Potion regression coverage.
+- No dependency changes.
+
 ## 2.1.7 — 2026-11-22
 
 - Add optional AHledger API integration with sortable estimated daily sales and provider prices in Professions.

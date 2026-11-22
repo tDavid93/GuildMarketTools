@@ -79,9 +79,12 @@ AHledgerAPI=nil
 GetItemInfo=function() return 'Potion' end
 local requested;C_Item={RequestLoadItemDataByID=function(id) requested=id end}
 assert(not M.LinkRecipeToChat({itemID=2}));assert(requested==2)
-assert(M.RecipeWowheadURL({name="Potion & Oil"})=='https://www.wowhead.com/search?q=Potion%20%26%20Oil')
+assert(M.RecipeWowheadURL({name="Potion & Oil"})=='https://www.wowhead.com/forever/search?q=Potion%20%26%20Oil')
+assert(M.RecipeWowheadURL({id=1251749,itemID=250951,name='Caustic Smog Potion'})=='https://www.wowhead.com/forever/spell=1251749')
+assert(M.RecipeWowheadURL({id=0,itemID=250951})=='https://www.wowhead.com/forever/item=250951')
+assert(M.RecipeWowheadURL({id=-1,itemID=1.5,name='Potion'})=='https://www.wowhead.com/forever/search?q=Potion')
 buttons['Copy Wowhead link'].scripts.OnClick()
-assert(named.GuildMarketRecipeLinkFrame.box:GetText()=='https://www.wowhead.com/search?q=Potion')
+assert(named.GuildMarketRecipeLinkFrame.box:GetText()=='https://www.wowhead.com/forever/spell=1')
 C_Item=nil;IsShiftKeyDown=nil
 M.ShowVendor()
 for _,name in ipairs({'GuildMarketToolsFrame','GuildMarketAlchemyFrame','GuildMarketVendorFrame'}) do assert(named[name].gmtHeaders and named[name].gmtPager) end

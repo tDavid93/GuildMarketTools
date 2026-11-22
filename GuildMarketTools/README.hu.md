@@ -8,7 +8,7 @@ Aukciós és szakmakezelő eszközök WoW Foreverhez. Az addon játékbeli felü
 
 **[A legújabb telepíthető kiadás letöltése](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. A kiadás mellékletei közül a `GuildMarketTools-2.1.7.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
+1. A kiadás mellékletei közül a `GuildMarketTools-2.1.8.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
 2. Lépj ki a játékból, és csomagold ki az `_forever_/Interface/AddOns/` mappába.
 3. Ellenőrizd, hogy ez az elérési út létezik: `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc`.
 4. Indítsd el a játékot, és engedélyezd a **Guild Market Tools** addont az AddOns listában.
@@ -110,7 +110,7 @@ A cérnák, festékek és gyakori vendoros alapanyagok kedvezmény nélküli dar
 
 A Professions részletei Summary, Materials, Market és Setup fülekre tagolódnak. Válassz receptet, majd a **Link to chat** gombbal vagy a soron **Shift-kattintással** illeszd a késztermék linkjét a chatbe. Az addon nem küldi el az üzenetet. Ha a tárgy linkje még nincs betöltve, az adatlekérés után kattints újra.
 
-A **Copy Wowhead link** kijelölt URL-t nyit meg: Ctrl+C-vel másolható. Receptnévre keres, mert a Forever saját azonosítói és receptjei eltérhetnek a Wowhead adataitól.
+A **Copy Wowhead link** kijelölt URL-t nyit meg: Ctrl+C-vel másolható. Közvetlenül a Wowhead Forever adatbázisában lévő gyártási receptre mutat. Receptazonosító nélkül a késztermék oldalát, azonosítók hiányában a Forever névkeresőt használja.
 
 A **Market** részletfül a kínálat darabszámát, a betöltött ajánlatok összértékét, az ismert aukciószámot, valamint a mennyiséggel súlyozott mediánt és kvartiliseket mutatja. Részletes adatokhoz az AH-nál: **Market depth → Refresh AH depth**. Egyszerű böngészési adatból csak mennyiséget mutat, összértéket nem talál ki. Látható az adatok kora és részleges volta. A kínálat nem eladási volumen; igazolt eladási adatok nélkül a forgási sebesség ismeretlen.
 

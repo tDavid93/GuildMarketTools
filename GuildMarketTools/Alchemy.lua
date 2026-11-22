@@ -226,9 +226,12 @@ end
 
 local detailTab="Summary"
 function M.RecipeWowheadURL(recipe)
-    -- Forever adds custom spell/item IDs: name search avoids linking an unrelated retail ID.
+    -- Recipe IDs are crafting spell IDs in the Forever database, not Retail IDs.
+    local function validID(id) return type(id)=="number" and id>0 and id<2147483648 and id==math.floor(id) end
+    if validID(recipe.id) then return "https://www.wowhead.com/forever/spell="..string.format("%.0f",recipe.id) end
+    if validID(recipe.itemID) then return "https://www.wowhead.com/forever/item="..string.format("%.0f",recipe.itemID) end
     local query=tostring(recipe.name or ""):gsub("[^%w%-_%.~]",function(c) return string.format("%%%02X",string.byte(c)) end)
-    return "https://www.wowhead.com/search?q="..query
+    return "https://www.wowhead.com/forever/search?q="..query
 end
 function M.LinkRecipeToChat(recipe)
     if not recipe then return false,"Select a recipe first." end
@@ -249,9 +252,9 @@ function M.CopyRecipeWowhead(recipe)
     if not recipe then return end
     if not copyPanel then
         copyPanel=M.UI.Window("GuildMarketRecipeLinkFrame");copyPanel:SetSize(540,150);copyPanel:SetPoint("CENTER");copyPanel:SetFrameStrata("FULLSCREEN_DIALOG")
-        copyPanel.TitleText:SetText("Copy Wowhead search link")
+        copyPanel.TitleText:SetText("Copy Wowhead Forever link")
         local hint=M.UI.Text(copyPanel,13);hint:SetPoint("TOPLEFT",16,-40);hint:SetWidth(508)
-        hint:SetText("Ctrl+C to copy. Forever recipes may differ from Wowhead.")
+        hint:SetText("Ctrl+C to copy the Wowhead Forever recipe link.")
         local box=CreateFrame("EditBox",nil,copyPanel,"InputBoxTemplate");box:SetSize(500,28);box:SetPoint("TOPLEFT",20,-76);box:SetAutoFocus(false)
         box:SetScript("OnEscapePressed",function() copyPanel:Hide() end)
         box:SetScript("OnEnterPressed",function() copyPanel:Hide() end)
