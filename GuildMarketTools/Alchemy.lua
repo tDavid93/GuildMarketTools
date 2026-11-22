@@ -238,8 +238,10 @@ function M.LinkRecipeToChat(recipe)
         if recipe.itemID and C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(recipe.itemID) end
         return false,"Item link loading. Try Link to chat again."
     end
-    if ChatEdit_InsertLink and ChatEdit_InsertLink(link) then return true end
-    if ChatFrame_OpenChat then ChatFrame_OpenChat(link); return true end
+    local insert=ChatFrameUtil and ChatFrameUtil.InsertLink or ChatEdit_InsertLink
+    local open=ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
+    if insert and insert(link) then return true end
+    if open then open(link); return true end
     return false,"Chat input is unavailable."
 end
 local copyPanel
@@ -284,6 +286,9 @@ local function inspect(r,prices)
         for _,v in ipairs(r.missingDetails) do text[#text+1]=v.role..": "..name(v.id,prices).." — "..v.reason end
         text[#text+1]="\nSetup allocation: "..(r.setupComplete and money(r.setupCost) or "Missing prices").." / "..r.setupCrafts.." crafts."
         text[#text+1]="Asking prices, not guaranteed sales. Recipe purchase and cooldown opportunity costs excluded."
+        text[#text+1]="\nAHledger median / unit: "..money(r.ahl and r.ahl.median)
+        text[#text+1]="Est. sold / day: "..M.AHledgerPace(r.ahl).."  (whole market)"
+        text[#text+1]=r.ahl and ((r.ahl.snapshot and "Bundled snapshot. " or "")..(r.ahl.stale and "Old / unknown age. " or "").."See Market for source details.") or r.ahlStatus
     elseif detailTab=="Materials" then
         heading("MATERIALS  /  per craft")
         for _,mat in ipairs(r.mats) do
@@ -293,6 +298,20 @@ local function inspect(r,prices)
         text[#text+1]="\nMaterials total: "..money(r.materialCost)
         text[#text+1]="Owned materials still have value. Use Buy materials to plan purchases."
     elseif detailTab=="Market" then
+        heading("AHLEDGER  /  COMMUNITY ESTIMATES")
+        local p=r.ahl
+        if p then
+            text[#text+1]=p.market
+            text[#text+1]=(p.snapshot and "Bundled snapshot" or "Provider table").." | Age: "..(p.age and math.floor(p.age/60).."m" or "unknown")..(p.stale and " - OLD / UNKNOWN" or "")
+            text[#text+1]="Est. sold / day: "..M.AHledgerPace(p).." (whole market)"
+            text[#text+1]="Listed units: "..tostring(p.quantity or "Unknown")
+            text[#text+1]="Minimum / unit: "..money(p.minBuyout)
+            text[#text+1]="Median / unit: "..money(p.median)
+            text[#text+1]="7d / 30d median: "..money(p.median7d).." / "..money(p.median30d)
+            text[#text+1]="30d range: "..money(p.low30d).." - "..money(p.high30d)
+            text[#text+1]="Sales/day is a provider estimate, not your expected sales. * = old/unknown age or bundled snapshot."
+        else text[#text+1]=r.ahlStatus end
+        text[#text+1]=""
         heading("CURRENT ASKING SUPPLY")
         local d=M.RecipeMarketStats and M.RecipeMarketStats(r.recipe) or {}
         if not d.source then text[#text+1]="No observations. Open Market depth and refresh at the AH."
@@ -309,7 +328,7 @@ local function inspect(r,prices)
                 text[#text+1]="Middle 50%: "..money(d.q25).." – "..money(d.q75)
             else text[#text+1]="Refresh depth for asking value and distribution." end
         end
-        text[#text+1]="\nSales velocity: unknown. Listings are supply, not completed sales; removals can be cancellations or expirations."
+        text[#text+1]="\nLocal listings alone do not measure sales. Removals can be cancellations or expirations."
     else
         heading(r.recipe.learned and "LEARNED" or "NOT LEARNED")
         text[#text+1]="Profession: "..tostring(r.recipe.currentSkill or "--").." / requires "..tostring(r.recipe.minSkill or "?")
@@ -328,14 +347,16 @@ local function render()
     local prices=M.AlchemyPrices(M.market.items,M.unavailable); local rows={}
     for _,recipe in pairs(recipes()) do
         if (not learnedOnly or recipe.learned) and (not learnableOnly or M.RecipeLearnable(recipe,recipe.currentSkill,UnitLevel("player"))) and (filter=="" or recipe.name:lower():find(filter,1,true)) then
-            rows[#rows+1]=M.AlchemyEstimate(recipe,prices,time(),M.settings.fee,M.settings.deposit)
+            local r=M.AlchemyEstimate(recipe,prices,time(),M.settings.fee,M.settings.deposit)
+            r.ahl,r.ahlStatus=M.AHledgerPrice(recipe.itemID,time())
+            rows[#rows+1]=r
         end
     end
     local state=M.RecipePriceStatus
-    local columns={{"Recipe",190},{"Cost / craft",110},{"AH / unit",110},{"Profit / craft",110},{"Status",110},{"Skill",70}}
+    local columns={{"Recipe",190},{"Cost / craft",110},{"AH / unit",110},{"Profit / craft",110},{"Est. sold/day",110},{"Skill",70}}
     M.UI.Sort(rows,sortColumn,descending,function(r,c)
         if c==1 then return r.recipe.name:lower() elseif c==2 then return r.cost elseif c==3 then return r.unitPrice
-        elseif c==4 then return r.profit elseif c==5 then return state(r) else return r.recipe.minSkill end
+        elseif c==4 then return r.profit elseif c==5 then return r.ahl and r.ahl.soldPerDay else return r.recipe.minSkill end
     end)
     M.UI.Headers(panel,columns,-164,function(c) if c==sortColumn then descending=not descending else sortColumn=c; descending=c~=1 end; render() end)
     M.UI.Tabs(panel,"Professions")
@@ -344,7 +365,7 @@ local function render()
     local found=false; selectedRecipe=nil
     for i,r in ipairs(rows) do
         local key=r.recipe.professionID..":"..r.recipe.id
-        local w=M.UI.Row(content,widgets,i,columns,{r.recipe.name,money(r.cost),money(r.unitPrice),money(r.profit),state(r),r.recipe.minSkill or "--"},selected==key)
+        local w=M.UI.Row(content,widgets,i,columns,{r.recipe.name,money(r.cost),money(r.unitPrice),money(r.profit),M.AHledgerPace(r.ahl),r.recipe.minSkill or "--"},selected==key)
         w.cells[4]:SetTextColor(r.profit and not r.stale and r.profit>0 and .4 or 1,r.profit and r.profit<0 and .5 or .9,.7)
         w:SetScript("OnClick",function()
             selected=key; panel.detailScroll:SetVerticalScroll(0)
@@ -354,6 +375,11 @@ local function render()
         w:SetScript("OnEnter",function(self)
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine(r.recipe.name,1,1,1)
             GameTooltip:AddLine("Shift-click: link crafted item to chat",.7,.8,.9)
+            GameTooltip:AddLine("Local prices: "..state(r),1,.82,.3)
+            GameTooltip:AddLine("AHledger est. sold/day: "..M.AHledgerPace(r.ahl).." (whole market)",.7,.8,.9)
+            GameTooltip:AddLine(r.ahl and ("AHledger median: "..money(r.ahl.median).." | "..r.ahl.market) or r.ahlStatus,.7,.8,.9,true)
+            GameTooltip:AddLine("* = old / unknown age or bundled snapshot",.7,.8,.9)
+            GameTooltip:AddLine(M.AHledgerCredit,.7,.8,.9)
             GameTooltip:AddLine(r.recipe.profession.." | "..(r.recipe.learned and "Learned" or "Not learned"),.6,.9,.9)
             local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"));if learning then GameTooltip:AddLine(learning,1,.82,.3,true) end;GameTooltip:Show()
         end)
@@ -427,7 +453,7 @@ function M.ShowAlchemy()
         search:SetScript("OnEscapePressed",search.ClearFocus)
         local hint=M.UI.Text(panel,12); hint:SetPoint("TOPLEFT",970,-75); hint:SetText("Filter recipes")
         status=M.UI.Text(panel,13); status:SetPoint("TOPLEFT",16,-140); status:SetWidth(920); status:SetJustifyH("LEFT")
-        local scroll=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); panel.gmtScroll=scroll; scroll:SetPoint("TOPLEFT",16,-192); scroll:SetPoint("BOTTOMRIGHT",-430,48)
+        local scroll=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); panel.gmtScroll=scroll; scroll:SetPoint("TOPLEFT",16,-192); scroll:SetPoint("BOTTOMRIGHT",-430,68)
         content=CreateFrame("Frame",nil,scroll); content:SetSize(700,1); scroll:SetScrollChild(content)
         panel.recipeTitle=M.UI.Text(panel,17);panel.recipeTitle:SetPoint("TOPLEFT",752,-164);panel.recipeTitle:SetSize(368,40)
         panel.recipeActions[4]=button(panel,"Link to chat",752,-204,180,function()
@@ -438,11 +464,12 @@ function M.ShowAlchemy()
         for i,label in ipairs({"Summary","Materials","Market","Setup"}) do
             panel.detailTabs[label]=button(panel,label,752+(i-1)*94,-280,90,function() detailTab=label;panel.detailScroll:SetVerticalScroll(0);render() end)
         end
-        local ds=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); ds:SetPoint("TOPLEFT",752,-316); ds:SetPoint("BOTTOMRIGHT",-32,50)
+        local ds=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); ds:SetPoint("TOPLEFT",752,-316); ds:SetPoint("BOTTOMRIGHT",-32,68)
         local dc=CreateFrame("Frame",nil,ds); dc:SetSize(368,1); ds:SetScrollChild(dc)
         detail=M.UI.Text(dc,13); detail:SetPoint("TOPLEFT"); detail:SetWidth(368)
         panel.detailContent=dc; panel.detailScroll=ds
         detail:SetText("Click a recipe for its material breakdown.\n\nProfit is an estimate at asking prices, not guaranteed sales.\n\nPrices older than 15 minutes are marked STALE.\n\nUse Settings to change AH cut and relist reserve.")
+        local credit=M.UI.Text(panel,12);credit:SetPoint("BOTTOMLEFT",16,42);credit:SetWidth(850);credit:SetText(M.AHledgerCredit.." | Est. sold/day: whole-market estimate. * = old / snapshot.")
         local foot=M.UI.Text(panel,13); foot:SetPoint("BOTTOMLEFT",16,18); foot:SetWidth(850); foot:SetJustifyH("LEFT"); foot:SetText("Estimates per craft. Asking prices do not guarantee sales. Shift-click a recipe to link its item.")
     end
     panel:Show(); render()

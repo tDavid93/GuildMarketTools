@@ -39,7 +39,7 @@ C_Timer={After=function(_,f) f() end}; GetItemInfo=function() return 'Item' end
 C_AuctionHouse={GetBrowseResults=function() return {} end}
 function fire(event) local copy={unpack(frames)}; for _,f in ipairs(copy) do if f.scripts.OnEvent then f.scripts.OnEvent(f,event) end end end
 """)
-for n in ['MarketCore.lua','UI.lua','CraftRequirements.lua','VendorBuyer.lua','VendorDeals.lua','MarketDepth.lua','Alchemy.lua','Market.lua']:
+for n in ['MarketCore.lua','UI.lua','CraftRequirements.lua','VendorBuyer.lua','VendorDeals.lua','MarketDepth.lua','AHledgerBridge.lua','Alchemy.lua','Market.lua']:
  l.execute(root.joinpath(n).read_text(encoding='utf-8-sig'))
 l.execute("""
 fire('PLAYER_LOGIN')
@@ -66,6 +66,16 @@ buttons['Link to chat'].scripts.OnClick();assert(inserted==link and not opened)
 inserted=nil;IsShiftKeyDown=function() return true end;row.scripts.OnClick();assert(inserted==link)
 ChatEdit_InsertLink=function() return false end
 assert(M.LinkRecipeToChat({itemID=1}));assert(opened==link)
+-- Forever exposes only the modern namespace: old globals must not be required.
+ChatEdit_InsertLink=nil;ChatFrame_OpenChat=nil;inserted=nil;opened=nil
+ChatFrameUtil={InsertLink=function(s) inserted=s;return true end,OpenChat=function(s) opened=s end}
+assert(M.LinkRecipeToChat({itemID=1}));assert(inserted==link and not opened)
+ChatFrameUtil.InsertLink=function() return false end
+assert(M.LinkRecipeToChat({itemID=1}));assert(opened==link)
+AHledgerAPI={VERSION=1,GetPrice=function() return {median=900,soldPerDay=12.5,updated=99900,market='forever/pvp/horde/eu'} end}
+M.RefreshAlchemy();assert(row.cells[5]:GetText()=='12.5')
+for _,label in ipairs({'Summary','Market'}) do named.GuildMarketAlchemyFrame.detailTabs[label].scripts.OnClick() end
+AHledgerAPI=nil
 GetItemInfo=function() return 'Potion' end
 local requested;C_Item={RequestLoadItemDataByID=function(id) requested=id end}
 assert(not M.LinkRecipeToChat({itemID=2}));assert(requested==2)

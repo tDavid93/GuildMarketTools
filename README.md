@@ -8,7 +8,7 @@ Auction and profession tools for WoW Forever. English in-game UI; no character-s
 
 **[Download the latest installable ZIP](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. Download `GuildMarketTools-2.1.6.zip` from release assets, not the Source code ZIP.
+1. Download `GuildMarketTools-2.1.7.zip` from release assets, not the Source code ZIP.
 2. Exit WoW and extract into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc` exists.
 4. Start WoW and enable **Guild Market Tools**.
@@ -48,6 +48,7 @@ Use the WoW Forever-compatible version of each optional integration.
 | Addon | Required? | Used for | Without it |
 | --- | --- | --- | --- |
 | Auctionator | Optional, recommended | Item-tooltip AH price and price age through its public API | Tooltip vendor value remains available; AH comparison needs Auctionator data. Market/recipe queries still use the native AH. |
+| AHledger | Optional | Estimated daily sales and community prices in Professions | Local scans and profit calculations work; provider fields show `--`. |
 | AtlasLootContinued | Optional, recommended | Minimum profession skill and teaching-recipe metadata | Bundled learning metadata is used where available. Unknown character levels remain labelled; trainer candidates can be checked at the trainer. |
 | EllesmereUI, TSM, Baganator or other bag addons | No | Not dependencies | Market Tools works without them. |
 | LibDBIcon / LibDataBroker | No | Not dependencies | The minimap button is built in. |
@@ -112,4 +113,15 @@ Professions now separates Summary, Materials, Market and Setup details. Select a
 
 The **Market** detail tab shows available units, loaded asking value, auction count where known, weighted median and quartiles. Use **Market depth → Refresh AH depth** at the auction house for detailed results. Browse-only observations show quantity without inventing a market value. Age and partial coverage are explicit. Supply is not sales volume: sale velocity remains unknown without completed-sale evidence.
 
-No new addon dependencies.
+
+## Optional AHledger integration
+
+Install [AHledger](https://www.curseforge.com/wow/addons/ahledger) separately (0.9.8+, latest Forever release recommended). It is not bundled in our ZIP. Integration uses public AHledgerAPI version 1. Restart the game after installing a new addon.
+
+Professions has a sortable **Est. sold/day** column for estimated units sold across the whole market. Zero is a known zero estimate; `--` means unknown; `*` marks old/unknown age or a bundled snapshot. Data older than one hour is marked old. Summary shows the provider median; Market shows minimum, median, 7/30-day medians, 30-day range, listed units, market identity and table age. These are provider estimates, not guaranteed sales.
+
+Local AH crafting costs and profit are unchanged. Provider data is not copied into local price history. Prices from AHledger (ahledger.com) is credited where shown.
+
+For current community data use the free [AHledger Sync](https://ahledger.com/download): select SavedVariables/AHledger.lua and connect your own AHledger account. Downloaded prices appear after `/reload`. Check the market shown in the Market details; AHledger controls it via `/ahl market`. Use `/ahl scanner on` to suppress AHledger’s additional UI.
+
+Chat linking now supports Forever’s ChatFrameUtil API as well as legacy clients. The button or Shift-click inserts the crafted item into chat without sending it.

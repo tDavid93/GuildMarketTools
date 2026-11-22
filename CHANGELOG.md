@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.7 — 2026-11-22
+
+- Add optional AHledger API integration with sortable estimated daily sales and provider prices in Professions.
+- Display market identity, table age, snapshot/old-data markers and attribution; preserve local price/cost calculations and history.
+- Fix chat item insertion on Forever with ChatFrameUtil, retaining legacy fallbacks.
+- Add provider failure, missing/zero estimates, timestamp validation and modern chat regression tests.
+- Document AHledger and optional Sync installation in both languages; third-party software is not bundled.
+
 ## 2.1.6 — 2026-11-22
 
 - Reorganize Professions into a compact recipe table and wider Summary / Materials / Market / Setup details.

@@ -8,7 +8,7 @@ Aukciós és szakmakezelő eszközök WoW Foreverhez. Az addon játékbeli felü
 
 **[A legújabb telepíthető kiadás letöltése](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. A kiadás mellékletei közül a `GuildMarketTools-2.1.6.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
+1. A kiadás mellékletei közül a `GuildMarketTools-2.1.7.zip` fájlt töltsd le, ne a **Source code** ZIP-et.
 2. Lépj ki a játékból, és csomagold ki az `_forever_/Interface/AddOns/` mappába.
 3. Ellenőrizd, hogy ez az elérési út létezik: `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc`.
 4. Indítsd el a játékot, és engedélyezd a **Guild Market Tools** addont az AddOns listában.
@@ -53,6 +53,7 @@ A visszaigazolt AH-vásárlás mennyisége és ellenőrzött ára automatikusan 
 | Addon | Szükséges? | Mire használjuk? | Mi történik nélküle? |
 | --- | --- | --- | --- |
 | Auctionator | Opcionális, ajánlott | Az itemtooltip AH-ára és az ár kora a nyilvános API-n keresztül | A vendorérték megmarad; a tooltip AH-összehasonlításához Auctionator-adat kell. A Market Tools saját AH-lekérdezései tovább működnek. |
+| AHledger | Opcionális | Becsült napi eladás és közösségi árak a Professions nézetben | A saját scan és profitkalkuláció tovább működik; az AHledger-adatok helyén `--` látszik. |
 | AtlasLootContinued | Opcionális, ajánlott | Minimális szakmaszint és a receptet tanító tárgy adatai | A beépített tanulási adatok használhatók, ahol rendelkezésre állnak. Az ismeretlen karakterszintet jelöli; a tréneres jelölteket a trénernél kell ellenőrizni. |
 | EllesmereUI, TSM, Baganator és más táskaaddonok | Nem | Nem függőségek | Az addon nélkülük is működik. |
 | LibDBIcon / LibDataBroker | Nem | Nem függőségek | A minimapgomb beépített. |
@@ -113,4 +114,15 @@ A **Copy Wowhead link** kijelölt URL-t nyit meg: Ctrl+C-vel másolható. Recept
 
 A **Market** részletfül a kínálat darabszámát, a betöltött ajánlatok összértékét, az ismert aukciószámot, valamint a mennyiséggel súlyozott mediánt és kvartiliseket mutatja. Részletes adatokhoz az AH-nál: **Market depth → Refresh AH depth**. Egyszerű böngészési adatból csak mennyiséget mutat, összértéket nem talál ki. Látható az adatok kora és részleges volta. A kínálat nem eladási volumen; igazolt eladási adatok nélkül a forgási sebesség ismeretlen.
 
-Nincs új addonfüggőség.
+
+## AHledger integráció (opcionális)
+
+Telepítsd az [AHledger addont](https://www.curseforge.com/wow/addons/ahledger) (0.9.8 vagy újabb, ajánlott a legfrissebb Forever-verzió). Külön telepítendő, nincs a Guild Market Tools ZIP-ben. Az integráció a nyilvános AHledgerAPI 1-es verzióját használja. Új addon telepítése után indítsd újra a játékot.
+
+A Professions **Est. sold/day** oszlopa rendezhető, és az egész piac becsült napi darabszámát mutatja. A nulla ismert nulla becslés, a `--` hiányzó adat; a `*` régi/ismeretlen korú adatot vagy csomagolt pillanatképet jelez. Az egy óránál régebbi adatot réginek jelöljük. A Summary fülön mediánár, a Market fülön minimum, medián, 7/30 napos medián, 30 napos ársáv, kínálat, piacazonosító és frissítési kor látható. Ez szolgáltatói becslés, nem garantált eladás.
+
+A saját AH-árakból számolt költséget és profitot nem írjuk felül AHledger-adatokkal. Az adatokat nem másoljuk saját árhistorikába; a forrásmegjelölés látható a felületen.
+
+Friss közösségi árakhoz az ingyenes [AHledger Sync](https://ahledger.com/download) használható: állítsd be a SavedVariables/AHledger.lua fájlt, majd kapcsolódj saját AHledger-fiókoddal. A letöltött árak `/reload` után kerülnek a játékba. Ellenőrizd a Market fülön a piacot; az AHledger `/ahl market` beállítása szabályozza. A `/ahl scanner on` kikapcsolja az AHledger saját kiegészítő felületeit.
+
+A chatbe linkelés támogatja a Forever ChatFrameUtil API-ját is. Gomb vagy Shift-kattintás beilleszti a készterméket a chatbe, automatikus küldés nélkül.
