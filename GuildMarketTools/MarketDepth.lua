@@ -25,6 +25,26 @@ function M.DepthStats(snapshot)
     if d.units>0 then d.minimum=d.levels[1].price;d.maximum=d.levels[#d.levels].price;d.mean=d.value/d.units end
     return d
 end
+-- Match the newest base-item observation; never combine variants or call supply sales.
+function M.RecipeMarketStats(recipe)
+    local best,selectedID
+    for id,item in pairs(M.market and M.market.items or {}) do
+        local k=item.key
+        if k and k.itemID==recipe.itemID and (k.itemSuffix or 0)==0 and (k.battlePetSpeciesID or 0)==0
+            and (not best or (item.time or 0)>(best.time or 0)) then best=item; selectedID=id end
+    end
+    local snapshot=selectedID and M.current and M.current[selectedID]
+    -- Empty complete searches do not replace the saved price observation.
+    for id,s in pairs(M.current or {}) do
+        local item=M.market.items[id]
+        local base=tonumber(id:match("^(%d+):"))==recipe.itemID and id:match(":0:0$")
+        if (item and item.key and item.key.itemID==recipe.itemID and (item.key.itemSuffix or 0)==0 and (item.key.battlePetSpeciesID or 0)==0 or base)
+            and (not snapshot or s.time>snapshot.time) then snapshot=s end
+    end
+    if snapshot then local d=M.DepthStats(snapshot); d.source="depth"; return d end
+    if best then return {source="browse",units=best.quantity,time=best.time} end
+    return {}
+end
 local panel,key,widgets,notice=nil,nil,{},""
 local function money(n)
     if not n then return "--" end

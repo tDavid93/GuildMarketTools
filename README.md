@@ -8,7 +8,7 @@ Auction and profession tools for WoW Forever. English in-game UI; no character-s
 
 **[Download the latest installable ZIP](https://github.com/tDavid93/GuildMarketTools/releases/latest)**
 
-1. Download `GuildMarketTools-2.1.5.zip` from release assets, not the Source code ZIP.
+1. Download `GuildMarketTools-2.1.6.zip` from release assets, not the Source code ZIP.
 2. Exit WoW and extract into `_forever_/Interface/AddOns/`.
 3. Check that `Interface/AddOns/GuildMarketTools/GuildMarketTools.toc` exists.
 4. Start WoW and enable **Guild Market Tools**.
@@ -103,3 +103,13 @@ The price-status column distinguishes No sale price, Missing mats and Missing se
 ### Vendor material defaults
 
 Threads, dyes and common vendor supplies have bundled neutral per-unit estimates, so crafting costs do not require a prior merchant visit. Coarse Thread defaults to 10 copper and Fine Thread to 100 copper. A valid saved merchant quote (including reputation discounts and bundle normalization) overrides the default. Unknown vendor items remain explicitly unpriced. Defaults derive from the same MIT-licensed Profit snapshot, Data/Items.lua; they are estimates, not actual purchase records. Missing output AH quotes still prevent a profit estimate, but complete material costs remain visible.
+
+## Recipe sharing and market supply
+
+Professions now separates Summary, Materials, Market and Setup details. Select a recipe, then use **Link to chat**, or **Shift-click** its row, to insert the crafted item link into chat. Nothing is sent automatically. Uncached item links request client data; click again after it loads.
+
+**Copy Wowhead link** opens a selected URL: press Ctrl+C. It searches by recipe name because Forever-specific IDs and recipes may not match Wowhead.
+
+The **Market** detail tab shows available units, loaded asking value, auction count where known, weighted median and quartiles. Use **Market depth → Refresh AH depth** at the auction house for detailed results. Browse-only observations show quantity without inventing a market value. Age and partial coverage are explicit. Supply is not sales volume: sale velocity remains unknown without completed-sale evidence.
+
+No new addon dependencies.

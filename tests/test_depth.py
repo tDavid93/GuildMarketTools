@@ -16,3 +16,18 @@ d=M.DepthStats({full=true,rows={}});assert(d.units==0 and d.minimum==nil and #d.
 d=M.DepthStats({full=true,rows={{price=10,quantity=1}}});assert(d.q25==10 and d.q75==10 and d.median==10)
 """)
 print('PASS: quantity aggregation, weighted median/quartiles/mean, cumulative supply/share, own/invalid exclusion, unknown commodity auction count, partial/empty/single-level cases.')
+
+l.execute("""
+local M=GuildMarketTools
+M.Init({},'Test','Test',100)
+assert(not M.RecipeMarketStats({itemID=1}).source)
+M.Observe({itemID=1},100,12,100,'Output')
+M.Observe({itemID=1,itemSuffix=10},999,99,105,'Variant')
+local d=M.RecipeMarketStats({itemID=1});assert(d.source=='browse' and d.units==12 and not d.value)
+M.Detail({itemID=1},{{price=100,quantity=2},{price=200,quantity=3},{price=1,quantity=100,own=true}},false,110)
+d=M.RecipeMarketStats({itemID=1});assert(d.source=='depth' and d.units==5 and d.value==800 and not d.full and not d.listings)
+M.Detail({itemID=1},{},true,120)
+d=M.RecipeMarketStats({itemID=1});assert(d.full and d.units==0 and d.time==120)
+assert(not M.RecipeMarketStats({itemID=2}).source)
+""")
+print('PASS: recipe supply uses matching base item; browse has no invented market value; partial depth, own exclusion and newer empty result preserved.')

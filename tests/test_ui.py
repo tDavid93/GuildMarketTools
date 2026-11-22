@@ -34,11 +34,12 @@ UIParent=CreateFrame('Frame'); GameTooltip=CreateFrame('Frame')
 time=function() return 100000 end; date=function() return '17 Nov' end
 GetMoney=function() return 1000000 end; GetTime=time
 GetRealmName=function() return 'Test' end; UnitName=function() return 'Test' end; UnitFactionGroup=function() return 'Horde' end
+UnitLevel=function() return 42 end
 C_Timer={After=function(_,f) f() end}; GetItemInfo=function() return 'Item' end
 C_AuctionHouse={GetBrowseResults=function() return {} end}
 function fire(event) local copy={unpack(frames)}; for _,f in ipairs(copy) do if f.scripts.OnEvent then f.scripts.OnEvent(f,event) end end end
 """)
-for n in ['MarketCore.lua','UI.lua','CraftRequirements.lua','VendorBuyer.lua','VendorDeals.lua','Alchemy.lua','Market.lua']:
+for n in ['MarketCore.lua','UI.lua','CraftRequirements.lua','VendorBuyer.lua','VendorDeals.lua','MarketDepth.lua','Alchemy.lua','Market.lua']:
  l.execute(root.joinpath(n).read_text(encoding='utf-8-sig'))
 l.execute("""
 fire('PLAYER_LOGIN')
@@ -49,6 +50,29 @@ for _,tab in ipairs({'Deals','History','Watchlist','Ledger','Settings','Professi
 assert(M.account.professions[171].recipes[1].name=='Potion')
 buttons['All professions'].scripts.OnClick(buttons['All professions'])
 assert(buttons['Alchemy'])
+local row
+for _,f in ipairs(frames) do if type(f.parent)=='table' and f.parent.parent==named.GuildMarketAlchemyFrame.gmtScroll and type(f.cells)=='table' and f.cells[1]:GetText()=='Potion' and f.scripts.OnClick then row=f; break end end
+assert(row);row.scripts.OnClick()
+assert(named.GuildMarketAlchemyFrame.recipeTitle:GetText()=='Potion')
+for _,label in ipairs({'Summary','Materials','Market','Setup'}) do
+ named.GuildMarketAlchemyFrame.detailTabs[label].scripts.OnClick()
+end
+local link='|cffffffff|Hitem:1::::::::|h[Potion]|h|r'
+GetItemInfo=function() return 'Potion',link end
+local inserted,opened
+ChatEdit_InsertLink=function(s) inserted=s;return true end
+ChatFrame_OpenChat=function(s) opened=s end
+buttons['Link to chat'].scripts.OnClick();assert(inserted==link and not opened)
+inserted=nil;IsShiftKeyDown=function() return true end;row.scripts.OnClick();assert(inserted==link)
+ChatEdit_InsertLink=function() return false end
+assert(M.LinkRecipeToChat({itemID=1}));assert(opened==link)
+GetItemInfo=function() return 'Potion' end
+local requested;C_Item={RequestLoadItemDataByID=function(id) requested=id end}
+assert(not M.LinkRecipeToChat({itemID=2}));assert(requested==2)
+assert(M.RecipeWowheadURL({name="Potion & Oil"})=='https://www.wowhead.com/search?q=Potion%20%26%20Oil')
+buttons['Copy Wowhead link'].scripts.OnClick()
+assert(named.GuildMarketRecipeLinkFrame.box:GetText()=='https://www.wowhead.com/search?q=Potion')
+C_Item=nil;IsShiftKeyDown=nil
 M.ShowVendor()
 for _,name in ipairs({'GuildMarketToolsFrame','GuildMarketAlchemyFrame','GuildMarketVendorFrame'}) do assert(named[name].gmtHeaders and named[name].gmtPager) end
 local a={{id=1,v=4},{id=2,v=2},{id=3}}

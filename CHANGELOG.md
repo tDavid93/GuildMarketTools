@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.6 — 2026-11-22
+
+- Reorganize Professions into a compact recipe table and wider Summary / Materials / Market / Setup details.
+- Add crafted-item chat insertion by button and Shift-click; no automatic sending.
+- Add copyable Wowhead name-search links compatible with custom-realm naming.
+- Show observed supply units, asking value, weighted price distribution, coverage and age; do not infer sales velocity.
+- Test recipe selection, all detail tabs, link insertion/copying, cache misses and partial/empty market data.
+- No new dependencies.
+
 ## 2.1.5 — 2026-11-19
 
 - Supply neutral per-unit defaults for 24 vendor ingredients, including Coarse and Fine Thread.

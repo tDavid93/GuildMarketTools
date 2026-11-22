@@ -224,23 +224,44 @@ function M.RecipePriceStatus(r)
     return #r.missing>0 and "Missing prices" or r.stale and "Stale" or r.profit and r.profit>0 and "Est. profit" or "Loss"
 end
 
-local function inspect(r,prices)
-    local text={r.recipe.name,r.recipe.learned and "Learned" or "Not learned", "Output / craft: "..tostring(r.recipe.count or "?"),""}
-    local requirements=M.CraftRequirementsText and M.CraftRequirementsText(r.recipe)
-    if requirements then
-        text[#text+1]=requirements
-        text[#text+1]="Setup / planned batch: "..(r.setupComplete and money(r.setupCost) or "Missing prices").." across "..r.setupCrafts.." craft(s)."
-        text[#text+1]=r.includeSetup and "Profit includes setup allocation." or "Existing setup selected; no new setup purchase allocated."
-        if r.requirementsUnknown then text[#text+1]="Profit unavailable: "..r.requirementsUnknown end
+local detailTab="Summary"
+function M.RecipeWowheadURL(recipe)
+    -- Forever adds custom spell/item IDs: name search avoids linking an unrelated retail ID.
+    local query=tostring(recipe.name or ""):gsub("[^%w%-_%.~]",function(c) return string.format("%%%02X",string.byte(c)) end)
+    return "https://www.wowhead.com/search?q="..query
+end
+function M.LinkRecipeToChat(recipe)
+    if not recipe then return false,"Select a recipe first." end
+    local get=C_Item and C_Item.GetItemInfo or GetItemInfo
+    local link=recipe.itemID and get and select(2,get(recipe.itemID))
+    if type(link)~="string" or not link:find("|Hitem:",1,true) then
+        if recipe.itemID and C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(recipe.itemID) end
+        return false,"Item link loading. Try Link to chat again."
     end
-    text[#text+1]="Profession skill: "..tostring(r.recipe.currentSkill or "--").." | Minimum: "..tostring(r.recipe.minSkill or "--")
-    text[#text+1]="Minimum source: "..(r.recipe.minSkillSource or "Unknown")
-    text[#text+1]="Character level: "..tostring(UnitLevel("player")).." | Required: "..tostring(r.recipe.minCharacterLevel or "Unknown")
-    text[#text+1]="Level source: "..(r.recipe.characterLevelSource or "Unknown")
-    local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"))
-    if learning then text[#text+1]="Learning: "..learning end
-    text[#text+1]="Recipe acquisition and other requirements still apply."
-    text[#text+1]=""
+    if ChatEdit_InsertLink and ChatEdit_InsertLink(link) then return true end
+    if ChatFrame_OpenChat then ChatFrame_OpenChat(link); return true end
+    return false,"Chat input is unavailable."
+end
+local copyPanel
+function M.CopyRecipeWowhead(recipe)
+    if not recipe then return end
+    if not copyPanel then
+        copyPanel=M.UI.Window("GuildMarketRecipeLinkFrame");copyPanel:SetSize(540,150);copyPanel:SetPoint("CENTER");copyPanel:SetFrameStrata("FULLSCREEN_DIALOG")
+        copyPanel.TitleText:SetText("Copy Wowhead search link")
+        local hint=M.UI.Text(copyPanel,13);hint:SetPoint("TOPLEFT",16,-40);hint:SetWidth(508)
+        hint:SetText("Ctrl+C to copy. Forever recipes may differ from Wowhead.")
+        local box=CreateFrame("EditBox",nil,copyPanel,"InputBoxTemplate");box:SetSize(500,28);box:SetPoint("TOPLEFT",20,-76);box:SetAutoFocus(false)
+        box:SetScript("OnEscapePressed",function() copyPanel:Hide() end)
+        box:SetScript("OnEnterPressed",function() copyPanel:Hide() end)
+        copyPanel:SetScript("OnHide",function() box:ClearFocus() end);copyPanel.box=box
+        table.insert(UISpecialFrames,"GuildMarketRecipeLinkFrame")
+    end
+    copyPanel:Show();copyPanel.box:SetText(M.RecipeWowheadURL(recipe));copyPanel.box:SetFocus();copyPanel.box:HighlightText()
+end
+local function inspect(r,prices)
+    panel.recipeTitle:SetText(r.recipe.name)
+    local text={}
+    local function heading(s) text[#text+1]="|cff66dcd6"..s.."|r" end
     local function age(id)
         local p=prices[id]
         if not p then return "NO PRICE" end
@@ -249,23 +270,58 @@ local function inspect(r,prices)
         if seconds<0 then return "INVALID TIME" end
         return math.floor(seconds/60).."m"..(seconds>900 and " - STALE" or " - fresh")
     end
-    text[#text+1]="Output price: "..age(r.recipe.itemID)
-    for _,mat in ipairs(r.mats) do text[#text+1]=mat.count.." x "..name(mat.id,prices).."\n  "..money(mat.price).." / unit | "..(mat.vendor and (mat.vendor.price and mat.vendor.source or "Vendor - visit supplier for price") or age(mat.id)) end
-    text[#text+1]="\nAH price / unit: "..money(r.unitPrice)
-    text[#text+1]="Materials / craft: "..money(r.materialCost)
-    text[#text+1]="Total cost / craft: "..money(r.cost)
-    if not r.cost then text[#text+1]="Known cost subtotal / craft: "..money(r.knownCost).." (incomplete)" end
-    text[#text+1]="Gross sale: "..money(r.gross)
-    text[#text+1]="After AH cut: "..money(r.net)
-    text[#text+1]="Profit / craft: "..money(r.profit)
-    text[#text+1]="\nAH / vendor material estimates. Owned herbs are not free. Recipe purchase cost / cooldown opportunity cost excluded."
-    if r.recipe.unsupported then text[#text+1]=r.recipe.unsupported end
-    if #r.missing>0 then
-        text[#text+1]="\nMissing / unavailable prices:"
-        for _,v in ipairs(r.missingDetails) do text[#text+1]=v.role..": "..name(v.id,prices).." ["..v.id.."]\n  "..v.reason end
+    if detailTab=="Summary" then
+        heading("PER CRAFT  /  "..tostring(r.recipe.count or "?").." output")
+        text[#text+1]="AH / unit: "..money(r.unitPrice).."  ("..age(r.recipe.itemID)..")"
+        text[#text+1]="Total cost: "..money(r.cost)
+        text[#text+1]="After AH cut: "..money(r.net)
+        text[#text+1]=(r.profit and r.profit<0 and "|cffff8899" or "|cff66dcd6").."Estimated profit: "..money(r.profit).."|r"
+        text[#text+1]=""
+        heading(M.RecipePriceStatus(r))
+        if not r.cost then text[#text+1]="Known subtotal: "..money(r.knownCost).." (incomplete)" end
+        if r.recipe.unsupported then text[#text+1]=r.recipe.unsupported end
+        if r.requirementsUnknown then text[#text+1]=r.requirementsUnknown end
+        for _,v in ipairs(r.missingDetails) do text[#text+1]=v.role..": "..name(v.id,prices).." — "..v.reason end
+        text[#text+1]="\nSetup allocation: "..(r.setupComplete and money(r.setupCost) or "Missing prices").." / "..r.setupCrafts.." crafts."
+        text[#text+1]="Asking prices, not guaranteed sales. Recipe purchase and cooldown opportunity costs excluded."
+    elseif detailTab=="Materials" then
+        heading("MATERIALS  /  per craft")
+        for _,mat in ipairs(r.mats) do
+            text[#text+1]="\n"..mat.count.." x "..name(mat.id,prices)
+            text[#text+1]=money(mat.price).." each  |  "..(mat.vendor and (mat.vendor.price and mat.vendor.source or "Vendor price unknown") or age(mat.id))
+        end
+        text[#text+1]="\nMaterials total: "..money(r.materialCost)
+        text[#text+1]="Owned materials still have value. Use Buy materials to plan purchases."
+    elseif detailTab=="Market" then
+        heading("CURRENT ASKING SUPPLY")
+        local d=M.RecipeMarketStats and M.RecipeMarketStats(r.recipe) or {}
+        if not d.source then text[#text+1]="No observations. Open Market depth and refresh at the AH."
+        else
+            local minutes=d.time and math.floor(math.max(0,time()-d.time)/60)
+            text[#text+1]=(d.source=="depth" and (d.full and "Complete loaded results" or "PARTIAL loaded results") or "Browse observation; coverage unknown")
+            text[#text+1]="Age: "..tostring(minutes or "?").."m"..(minutes and minutes>=15 and " - STALE" or "")
+            text[#text+1]="Available units: "..tostring(d.units or "Unknown")
+            if d.source=="depth" then
+                text[#text+1]="Auctions: "..tostring(d.listings or "Unknown").."  |  Price levels: "..#d.levels
+                text[#text+1]="Total asking value: "..money(d.value)
+                text[#text+1]="Lowest / unit: "..money(d.minimum)
+                text[#text+1]="Median / unit: "..money(d.median)
+                text[#text+1]="Middle 50%: "..money(d.q25).." – "..money(d.q75)
+            else text[#text+1]="Refresh depth for asking value and distribution." end
+        end
+        text[#text+1]="\nSales velocity: unknown. Listings are supply, not completed sales; removals can be cancellations or expirations."
+    else
+        heading(r.recipe.learned and "LEARNED" or "NOT LEARNED")
+        text[#text+1]="Profession: "..tostring(r.recipe.currentSkill or "--").." / requires "..tostring(r.recipe.minSkill or "?")
+        text[#text+1]="Character: "..tostring(UnitLevel("player")).." / requires "..tostring(r.recipe.minCharacterLevel or "?")
+        local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"))
+        if learning then text[#text+1]=learning end
+        text[#text+1]="\n"..(M.CraftRequirementsText and M.CraftRequirementsText(r.recipe) or "Requirements unknown")
+        text[#text+1]="\nSkill source: "..(r.recipe.minSkillSource or "Unknown")
+        text[#text+1]="Level source: "..(r.recipe.characterLevelSource or "Unknown")
+        text[#text+1]=r.includeSetup and "Profit includes setup allocation." or "Existing setup; no new setup purchase allocated."
     end
-    detail:SetText(table.concat(text,"\n"))
-    panel.detailContent:SetHeight(math.max(1,detail:GetStringHeight()+15))
+    detail:SetText(table.concat(text,"\n"));panel.detailContent:SetHeight(math.max(1,detail:GetStringHeight()+16))
 end
 local function render()
     if not panel or not panel:IsShown() or not M.market then return end
@@ -276,10 +332,10 @@ local function render()
         end
     end
     local state=M.RecipePriceStatus
-    local columns={{"Recipe",190},{"Cost / craft",110},{"AH / unit",110},{"Profit / craft",120},{"Price status",95},{"Age",65},{"Min. skill",90}}
+    local columns={{"Recipe",190},{"Cost / craft",110},{"AH / unit",110},{"Profit / craft",110},{"Status",110},{"Skill",70}}
     M.UI.Sort(rows,sortColumn,descending,function(r,c)
         if c==1 then return r.recipe.name:lower() elseif c==2 then return r.cost elseif c==3 then return r.unitPrice
-        elseif c==4 then return r.profit elseif c==5 then return state(r) elseif c==6 then return r.age else return r.recipe.minSkill end
+        elseif c==4 then return r.profit elseif c==5 then return state(r) else return r.recipe.minSkill end
     end)
     M.UI.Headers(panel,columns,-164,function(c) if c==sortColumn then descending=not descending else sortColumn=c; descending=c~=1 end; render() end)
     M.UI.Tabs(panel,"Professions")
@@ -288,11 +344,16 @@ local function render()
     local found=false; selectedRecipe=nil
     for i,r in ipairs(rows) do
         local key=r.recipe.professionID..":"..r.recipe.id
-        local w=M.UI.Row(content,widgets,i,columns,{r.recipe.name,money(r.cost),money(r.unitPrice),money(r.profit),state(r),math.floor(r.age/60).."m",r.recipe.minSkill or "--"},selected==key)
+        local w=M.UI.Row(content,widgets,i,columns,{r.recipe.name,money(r.cost),money(r.unitPrice),money(r.profit),state(r),r.recipe.minSkill or "--"},selected==key)
         w.cells[4]:SetTextColor(r.profit and not r.stale and r.profit>0 and .4 or 1,r.profit and r.profit<0 and .5 or .9,.7)
-        w:SetScript("OnClick",function() selected=key; panel.detailScroll:SetVerticalScroll(0); render() end)
+        w:SetScript("OnClick",function()
+            selected=key; panel.detailScroll:SetVerticalScroll(0)
+            if IsShiftKeyDown and IsShiftKeyDown() then local ok,msg=M.LinkRecipeToChat(r.recipe); if not ok then note=msg end end
+            render()
+        end)
         w:SetScript("OnEnter",function(self)
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine(r.recipe.name,1,1,1)
+            GameTooltip:AddLine("Shift-click: link crafted item to chat",.7,.8,.9)
             GameTooltip:AddLine(r.recipe.profession.." | "..(r.recipe.learned and "Learned" or "Not learned"),.6,.9,.9)
             local learning=M.RecipeLearningStatus(r.recipe,r.recipe.currentSkill,UnitLevel("player"));if learning then GameTooltip:AddLine(learning,1,.82,.3,true) end;GameTooltip:Show()
         end)
@@ -301,7 +362,12 @@ local function render()
     end
     for i=#rows+1,#widgets do widgets[i]:Hide() end
     content:SetHeight(math.max(1,#rows*32))
-    if not found then panel.detailContent:SetHeight(300); detail:SetText(#rows==0 and "No matching recipes\n\nOpen each crafting profession once to import its recipes.\n\nLearning filter checks known skill and character levels. Trainer recipes with unknown character requirements are included for verification.\n\nTry another profession or clear the filters." or "Recipe details\n\nSelect a recipe for its materials and calculation.\n\nProfit is estimated from asking prices, after the AH cut and your relist reserve.\n\nPrices older than 15 minutes are marked Stale.") end
+    if not found then
+        panel.recipeTitle:SetText("Select a recipe");panel.detailContent:SetHeight(160)
+        detail:SetText(#rows==0 and "No matching recipes.\n\nOpen your profession to import recipes, or clear the filters." or "Select a recipe to review profit, materials and market supply.\n\nShift-click a row to link its crafted item to chat.")
+    end
+    for _,b in ipairs(panel.recipeActions) do b:SetEnabled(selectedRecipe~=nil) end
+    for label,b in pairs(panel.detailTabs) do b:SetAlpha(label==detailTab and 1 or .6) end
 end
 local function button(parent,text,x,y,width,fn)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate"); b:SetSize(width,24); b:SetPoint("TOPLEFT",x,y); b:SetText(text); b:SetScript("OnClick",fn); return M.UI.Button(b)
@@ -323,9 +389,10 @@ function M.ShowAlchemy()
             local ok,msg=M.RefreshRecipePrices(selectedRecipe,function(text) note=text; render() end)
             if not ok then note=msg; render() end
         end)
-        button(panel,"Market depth",850,-98,170,function() if selectedRecipe then M.ShowRecipeDepth(selectedRecipe) else note="Select a recipe first.";render() end end)
-        button(panel,"Buy materials",600,-98,170,function() if selectedRecipe then M.ShowCraftShopping(selectedRecipe,1) else note="Select a recipe first.";render() end end)
-        button(panel,"Production costs",410,-98,170,function() if selectedRecipe then M.ShowCraftCosts(selectedRecipe) else note="Select a recipe first.";render() end end)
+        panel.recipeActions={}
+        panel.recipeActions[1]=button(panel,"Market depth",16,-98,160,function() if selectedRecipe then M.ShowRecipeDepth(selectedRecipe) else note="Select a recipe first.";render() end end)
+        panel.recipeActions[2]=button(panel,"Buy materials",752,-240,180,function() if selectedRecipe then M.ShowCraftShopping(selectedRecipe,1) else note="Select a recipe first.";render() end end)
+        panel.recipeActions[3]=button(panel,"Production costs",940,-240,180,function() if selectedRecipe then M.ShowCraftCosts(selectedRecipe) else note="Select a recipe first.";render() end end)
         button(panel,"Cancel refresh",250,-98,135,function() if M.CancelRecipeRefresh then M.CancelRecipeRefresh() end end)
         local check=CreateFrame("CheckButton",nil,panel,"UICheckButtonTemplate"); check:SetPoint("TOPLEFT",365,-65); check:SetSize(24,24)
         local label=check:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall"); label:SetPoint("LEFT",check,"RIGHT"); label:SetText("Learned only")
@@ -336,7 +403,7 @@ function M.ShowAlchemy()
             if learnedOnly then learnableOnly=false; skillCheck:SetChecked(false) end
             resetList()
         end)
-        skillCheck=CreateFrame("CheckButton",nil,panel,"UICheckButtonTemplate"); skillCheck:SetPoint("TOPLEFT",16,-96); skillCheck:SetSize(24,24)
+        skillCheck=CreateFrame("CheckButton",nil,panel,"UICheckButtonTemplate"); skillCheck:SetPoint("TOPLEFT",410,-96); skillCheck:SetSize(24,24)
         local sl=M.UI.Text(skillCheck,13); sl:SetPoint("LEFT",skillCheck,"RIGHT"); sl:SetText("Learnable / check trainer")
         skillCheck:SetScript("OnClick",function(self)
             learnableOnly=not not self:GetChecked()
@@ -345,7 +412,7 @@ function M.ShowAlchemy()
         end)
         skillCheck:SetScript("OnEnter",function(self)
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine("Unlearned recipes within your skill AND character level",1,1,1)
-            GameTooltip:AddLine("Unknown skill or character-level requirements are excluded. Level comes from the teaching recipe item, not the crafted output. Trainer-only recipes without level data are excluded. Other learning requirements still apply.",.8,.85,.9,true); GameTooltip:Show()
+            GameTooltip:AddLine("Unknown skill requirements are excluded. Trainer recipes with unknown character-level requirements remain visible for verification. Other learning requirements still apply.",.8,.85,.9,true); GameTooltip:Show()
         end)
         skillCheck:SetScript("OnLeave",function() GameTooltip:Hide() end)
         local profButton=button(panel,"All professions",520,-68,180,function(self)
@@ -360,14 +427,23 @@ function M.ShowAlchemy()
         search:SetScript("OnEscapePressed",search.ClearFocus)
         local hint=M.UI.Text(panel,12); hint:SetPoint("TOPLEFT",970,-75); hint:SetText("Filter recipes")
         status=M.UI.Text(panel,13); status:SetPoint("TOPLEFT",16,-140); status:SetWidth(920); status:SetJustifyH("LEFT")
-        local scroll=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); panel.gmtScroll=scroll; scroll:SetPoint("TOPLEFT",16,-192); scroll:SetPoint("BOTTOMRIGHT",-335,48)
-        content=CreateFrame("Frame",nil,scroll); content:SetSize(780,1); scroll:SetScrollChild(content)
-        local ds=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); ds:SetPoint("TOPLEFT",850,-192); ds:SetPoint("BOTTOMRIGHT",-32,50)
-        local dc=CreateFrame("Frame",nil,ds); dc:SetSize(270,1); ds:SetScrollChild(dc)
-        detail=M.UI.Text(dc,13); detail:SetPoint("TOPLEFT"); detail:SetWidth(270)
+        local scroll=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); panel.gmtScroll=scroll; scroll:SetPoint("TOPLEFT",16,-192); scroll:SetPoint("BOTTOMRIGHT",-430,48)
+        content=CreateFrame("Frame",nil,scroll); content:SetSize(700,1); scroll:SetScrollChild(content)
+        panel.recipeTitle=M.UI.Text(panel,17);panel.recipeTitle:SetPoint("TOPLEFT",752,-164);panel.recipeTitle:SetSize(368,40)
+        panel.recipeActions[4]=button(panel,"Link to chat",752,-204,180,function()
+            local ok,msg=M.LinkRecipeToChat(selectedRecipe);if not ok then note=msg;render() end
+        end)
+        panel.recipeActions[5]=button(panel,"Copy Wowhead link",940,-204,180,function() M.CopyRecipeWowhead(selectedRecipe) end)
+        panel.detailTabs={}
+        for i,label in ipairs({"Summary","Materials","Market","Setup"}) do
+            panel.detailTabs[label]=button(panel,label,752+(i-1)*94,-280,90,function() detailTab=label;panel.detailScroll:SetVerticalScroll(0);render() end)
+        end
+        local ds=CreateFrame("ScrollFrame",nil,panel,"UIPanelScrollFrameTemplate"); ds:SetPoint("TOPLEFT",752,-316); ds:SetPoint("BOTTOMRIGHT",-32,50)
+        local dc=CreateFrame("Frame",nil,ds); dc:SetSize(368,1); ds:SetScrollChild(dc)
+        detail=M.UI.Text(dc,13); detail:SetPoint("TOPLEFT"); detail:SetWidth(368)
         panel.detailContent=dc; panel.detailScroll=ds
         detail:SetText("Click a recipe for its material breakdown.\n\nProfit is an estimate at asking prices, not guaranteed sales.\n\nPrices older than 15 minutes are marked STALE.\n\nUse Settings to change AH cut and relist reserve.")
-        local foot=M.UI.Text(panel,13); foot:SetPoint("BOTTOMLEFT",16,18); foot:SetWidth(780); foot:SetJustifyH("LEFT"); foot:SetText("Per craft, minimum output. AH minima do not guarantee stock or sales. Recipe costs excluded.")
+        local foot=M.UI.Text(panel,13); foot:SetPoint("BOTTOMLEFT",16,18); foot:SetWidth(850); foot:SetJustifyH("LEFT"); foot:SetText("Estimates per craft. Asking prices do not guarantee sales. Shift-click a recipe to link its item.")
     end
     panel:Show(); render()
 end
